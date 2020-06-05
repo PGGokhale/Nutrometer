@@ -20,6 +20,7 @@ plotly = "*"
 scikit-learn = "*"
 rq = "*"
 worker = "*"
+redis = "*"
 
 [requires]
 python_version = "3.7"

@@ -99,7 +99,7 @@ db_connection_string = (
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.environ.get("JAWSDB_URL", "") or db_connection_string
+    os.environ.get("JAWSDB_GREEN_URL", "") or db_connection_string
 )
 
 # databse setup for SQLAlchemy
