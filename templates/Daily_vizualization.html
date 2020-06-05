@@ -49,6 +49,7 @@
                 </div>
             </aside>
         </div>
+
         <div class="container">
             <div class="row">
                 <div class="col">
@@ -89,6 +90,53 @@
                     graphs[i].data,
                     graphs[i].layout || {});
     }
+
+
+
+  </script>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script type=text/javascript>
+  var tables;
+      // $(function() {
+      //   $('#submit').bind('click', function() {
+      //     $.getJSON('/background_process',  function(data, status, request) {
+      //       var status_url = request.getResponseHeader('Location');
+      //       console.log(status_url)
+      //           check_job_status(status_url);
+              
+            
+      //     });
+      //     return false;
+      //   });
+      // });
+      function check_job_status(status_url) {
+        $.getJSON(status_url, function(data) {
+        console.log(data);
+    switch (data.status) {
+      case "unknown":
+          flash_alert("Unknown job id", "danger");
+          $("#submit").removeAttr("disabled");
+          break;
+      case "finished":
+        console.log(data.result)
+        $('#divResults').append(data.result)
+          
+          // flash_alert(data.result, "success");
+          $("#submit").removeAttr("disabled");
+          break;
+      case "failed":
+          flash_alert("Job failed: " + data.message, "danger");
+          $("#submit").removeAttr("disabled");
+          break;
+      default:
+        // queued/started/deferred
+        setTimeout(function() {
+          check_job_status(status_url);
+        }, 3000);
+    }
+  });
+}
 
 
 

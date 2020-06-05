@@ -81,9 +81,13 @@ def calcScore(target, nutsSum):
 
 
 
-def hillClimbing(nutrients, displaylist, target, items_in_basket):
- 
-    nutrients = nutrients
+# def hillClimbing(nutrients, displaylist, target, items_in_basket):
+def hillClimbing(inputs_to_function):
+
+    nutrients = inputs_to_function["first"]
+    displaylist = inputs_to_function["second"]
+    target = inputs_to_function["third"]
+    items_in_basket = inputs_to_function["fourth"]
   
     basket = pd.DataFrame()
     basket_NDB  = pd.DataFrame()
@@ -102,7 +106,7 @@ def hillClimbing(nutrients, displaylist, target, items_in_basket):
         # to track number of iterations of external while loop
         iteration += 1
         print(f"Iteration : {iteration}")
-        if(iteration == 10):
+        if(iteration == 3):
             print(f"Minimum score : {minScore}")
             print(basket_NDB)     
             break
