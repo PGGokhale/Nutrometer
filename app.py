@@ -66,13 +66,6 @@ from rq import Queue
 from worker import conn
 from rq.job import Job
 
-# redis_conn = redis.Redis(
-#     host=os.getenv("REDIS_HOST", "127.0.0.1"),
-#     port=os.getenv("REDIS_PORT", "6379"), 
-#     password=os.getenv("REDIS_PASSWORD", ""),   
-# )
-
-# redis_queue = Queue(connection=redis_conn)
 
 redis_queue = Queue(connection=conn)
 
@@ -92,7 +85,7 @@ app.secret_key = "1a2b3c4d5e"
 HOSTNAME = "127.0.0.1"
 PORT = 3306
 USERNAME = "root"
-PASSWORD = "uv9y9g5t"
+PASSWORD = "password"
 DIALECT = "mysql"
 DRIVER = "pymysql"
 DATABASE = "usda"
@@ -104,10 +97,6 @@ db_connection_string = (
 
 # Database Setup for HEROKU
 
-# db_cloud_string = os.getenv("JAWSDB_URL")
-
-# app.config["SQLALCHEMY_DATABASE_URI"] = (
-#     db_cloud_string )
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     os.environ.get("JAWSDB_URL", "") or db_connection_string
@@ -227,8 +216,7 @@ def setup():
 # Method to get the recommendation list of items similar to food items in advanced search
 # filepath = "/db/nutrition.csv"
 df = pd.read_csv("db/nutrition.csv")
-print("Nutrition data is: ")
-print(df.head())
+
 X_text = df["Shrt_Desc"].values
 cv = make_pipeline(
 CountVectorizer(
@@ -252,8 +240,7 @@ df["Sugar/cal"] = df["Sugar_Total"]/ df["Energy"]
 df["Calcium/cal"] = df["Calcium"]/ df["Energy"]    
 df_percalorie = df[["NDB_No", "Shrt_Desc", "Carbohydrate", "Protein", "Lipid_Total", "Fiber", "Sugar_Total", "Protein/cal", "Carbohydrtes/cal", "Sodium/cal", "Sodium", 
 "Total_fat/cal", "Cholestrol", "Sugar/cal", "Calcium/cal", "Calcium"]]
-print("dataFrame per calorie value is: ")
-print(df_percalorie.head())
+
 # Removing null values from DataFrame
 df_percalorie = df_percalorie.dropna(how='any',axis=0)
 # Find the array for X values in recommendation model
@@ -323,7 +310,7 @@ def login():
 # Function to get the variable names used to validate the logged in user.
 # This function retr=urns a user list with logged in user's first name, last name, gender and username
 def loginsys(username, password):
-    print("Username: " + username + " Password: " + password)
+    
     user_ls = (
         db.session.query(
             User_account.first_name,
@@ -457,9 +444,6 @@ class AddMeal(FlaskForm):
     submit = SubmitField("Add")
 
 
-# Code to display daily statistics on dashboard
-# daily_goal_list = [1800, 130, 25, 2200, 25, 25.2]
-
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
@@ -474,13 +458,12 @@ def dashboard():
     session_user_name = session["username"]
     user_personal_data = getUserpersonalData(session_user_name)
     daily_goal_list = CalculateDailyGoals(user_personal_data)
-    print(daily_goal_list)
+   
 
     form = AddMeal(request.form)
     if form.validate_on_submit():
 
-        # flash(f'Meal Added for {form.meal_category.data}!', 'successfully')
-
+    
         new_meal = Meal_record(
             username=session["username"],
             meal_date=form.inputdate.data,
@@ -489,21 +472,11 @@ def dashboard():
             amount=form.servings_count.data,
             meal_item_code=form.foodNameId.data,
         )
-        # if new_meal.type is null:
-        #     print("Please enter a valid meal type value")
-        #     msg = "Please enter a valid value"
-        # elif new_meal.meal_desc is null:
-        #     print("Please search a meal item")
-        #     msg = "Please enter a valid value"
-        # elif new_meal.amount is null:
-        #     print("Please enter a valid serving size")
-        #     msg = "Please enter a valid serving sevalue"
 
-        # else:
         db.session.add(new_meal)
         db.session.commit()
         flash("Meal saved successfully!")
-        print("Adding meal")
+    
         return redirect("/dashboard")
 
     # Code to display daily statistics on dashboard - part 2
@@ -614,7 +587,7 @@ def dashboard():
         .filter(Meal_record.meal_item_code == Nutrition.NDB_No)
         .filter(Meal_record.meal_date == dt.date.today())
     )
-    # print ("daily_total qry: "+ str(cmd))
+    
     daily_stats = cmd.first()
 
     results = [0.0, 0, 0, 0, 0, 0]
@@ -629,8 +602,7 @@ def dashboard():
             float(daily_stats.fiber),
         ]
 
-    print("daily stats are: ", daily_stats)
-    print("daily stats cnt: ", daily_stats.cnt)
+
 
     # Code to display last 5 entries on dashboard
     top5_entries = (
@@ -639,7 +611,7 @@ def dashboard():
         .order_by(Meal_record.id.desc())
         .limit(5)
     )
-    print("Top 5 entries are: ", top5_entries)
+
     return render_template(
         "dashboard.html",
         form=form,
@@ -718,8 +690,7 @@ def analysis():
     
 
     if request.method == "GET" and desired_date :
-        print(f"desired date : {desired_date}")
-        print(f"end date : {end_date}")
+
         starting_date = dateutil.parser.parse(desired_date)
         ending_date =  dateutil.parser.parse(end_date)
 
@@ -1088,8 +1059,7 @@ def analysis():
             job = redis_queue.enqueue(hillClimbing,input_to_function, job_timeout=600)
             tables = None
             job_id=job.get_id()
-            data={'Location': url_for('job_status', job_id=job.get_id())}
-            print(json.dumps(job_id))
+    
             return render_template("food_reco.html", tables=tables, job_id=json.dumps(job_id))
         else:
             tables = None
@@ -1122,12 +1092,9 @@ def similar_items(term):
     similarities = cosine_similarity(X_norm[idx].reshape(1,-1), X_norm)
     k = 5
     result = np.sort(np.argpartition(similarities[0], len(similarities[0]) - k)[-k:])
-    print("list of similar items: ")
-    print("result for similar items:")
-    print(df_percalorie.iloc[result].columns)
-    print(df_percalorie.iloc[result].head())
+
     return df_percalorie.iloc[result].values.tolist()
-    # return
+
 
 @app.route("/nutrition", methods=["GET"])
 def nutrition():
@@ -1143,8 +1110,7 @@ def nutrition():
         )
 
         similarResult = similar_items(ndbNo)
-        print('SimilarResult')
-        print(similarResult)
+
         return render_template("nutrition.html", nutriData=nutriData,similarResult=similarResult)
     return render_template("nutrition.html")
 
@@ -1220,7 +1186,7 @@ def profile():
         .all()
     )
 
-    # print("User profile is: ", user_profile)
+
 
     return render_template("/profile.html", user_profile=user_profile)
 
@@ -1246,10 +1212,10 @@ def advanced_search():
     if not term:
         return '{  "data": [] } '
     ## Add logic here  to find the search term ##
-    print('term: '+term)
+
     searchResult = advanced_search_func(term)
     return json.dumps(searchResult.values.tolist(), cls=DecimalEncoder)
-    #return(json.dumps(str(searchResult.values.tolist())))
+
 
 ######################################################################################################
 # Route #12(/job_status)
@@ -1267,12 +1233,11 @@ def job_status(job_id):
             'status': job.get_status(),
             'result': job.result,
         }
-        print(job.result)
-        print(job.get_status())
+
         if job.is_failed:
             response['message'] = job.exc_info.strip().split('\n')[-1]
         if job.get_status() == "finished":
-            print("I am inside finished")
+    
             basket_NDB = job.result
             lastelement = len(basket_NDB.index)
             basket_NDB.index = pd.RangeIndex(start=1,stop=(lastelement+1), step=1)
@@ -1281,11 +1246,9 @@ def job_status(job_id):
             basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
             basket_NDB_Transpose = basket_NDB.T
             basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Entry_')
-            # jsonfiles = json.dumps(basket_NDB_Transpose.values.tolist(), cls=DecimalEncoder)
 
             tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
-            # titles=basket_NDB_Transpose.columns.values
-            # return render_template("food_reco.html", tables=tables)
+
             response = {
             'status': job.get_status(),
             'result': tables,
@@ -1293,42 +1256,6 @@ def job_status(job_id):
 
 
     return jsonify(response)
-
-######################################################################################################
-# Route #12(/Background_process)
-# This route is to start the background task for Food recommendation based on the nutrition
-######################################################################################################
-
-@app.route("/background_process")
-def background_process():
-
-    
-    print(f"Decificent Nutrients : {deficient_nutrients}")
-
-    if(len(deficient_nutrients)):
-        input_to_function = {"first":deficient_nutrients,
-        "second":displaylist,
-        "third":target_nutrients_corrected,
-        "fourth":5
-        }
-        job = redis_queue.enqueue(hillClimbing,input_to_function, job_timeout=600)
-        print(f" Job ID : {job.id}")
-
-        return jsonify({}), 202, {'Location': url_for('job_status', job_id=job.get_id())}
-        # return jsonify({"job_id": job.id})
-    else:
-        return jsonify({}), 202, {'Location': url_for('job_status', job_id=null)}
-            # return jsonify({"job_id": null})
-        # return jsonify(output)
-        # data_to_display = pd.DataFrame(columns=["Message"],data=[ "Please wait while the recommendation is processed"])                
-        # tables = [data_to_display.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
-    
-    
-
-
-
-
-
 
 
 
