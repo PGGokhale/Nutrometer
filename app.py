@@ -99,7 +99,7 @@ db_connection_string = (
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.environ.get("JAWSDB_GREEN_URL", "") or db_connection_string
+    os.environ.get("JAWSDB_URL", "") or db_connection_string
 )
 
 # databse setup for SQLAlchemy
@@ -420,6 +420,7 @@ def getUserpersonalData(user):
         User_account.date_of_birth.label("dob"),
     ).filter(User_account.username == user)
     user_info = cmd1.first()
+    print(user_info)
     return creatUserPersonalJson(user_info)
 
 
