@@ -675,6 +675,10 @@ def get_status(job):
 
 @app.route("/analysis", methods=["GET", "POST"])
 def analysis():
+    global deficient_nutrients
+    global displaylist
+    global target_nutrients_corrected
+    global Units_corrected
 
     if checkLoggedIn() == False:
         return redirect("/login")
