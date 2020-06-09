@@ -1,20 +1,33 @@
 {% extends "layout.html" %} {% block pagetitle %}Nutrometer{% endblock %} {% block bodycontent %}
 <style>
-table{
-    width:100%;
- }
+table {
+	width: 100%;
+ 
+}
 </style>
 <section class="hero-section set-bg" data-setbg="./static/images/food.jpg">
     <div class="container">
         <div class="row">
-            <div class="col-md">
+            <div class="col-lg">
                 <div class="register-text">
                     <div class="section-title">
+                      {% if job_id %}
+                      <h4>Target Nutrients for which Food is recommended</h4>
+                            <div id = "divTarget"  >
+          
+ 
+                            </div>
+                      {% endif %}
                         <h4>Food Recommendation for you</h4>
 
 
                             {% if job_id %}
-                            <div id = "divResults" >
+                            <div id = "divTarget"  >
+          
+ 
+                            </div>
+
+                            <div id = "divResults"  >
           
  
                             </div>
@@ -63,7 +76,8 @@ table{
           break;
       case "finished":
         console.log(data.result)
-        $('#divResults').append(data.result)
+        $('#divResults').append(data.result.result1)
+        $('#divTarget').append(data.result.target)
           
           // flash_alert(data.result, "success");
           $("#submit").removeAttr("disabled");

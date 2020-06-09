@@ -5,6 +5,34 @@ import datetime as dt
 import pandas as pd
 import decimal
 
+data_units_corrected_for_display = {
+    "Water": "(ml/d)",
+    "Carbohydrate": "(g/d)",
+    "Fiber":  "(g/d)",
+    "Protein": "(mg/d)",
+    "Copper": "(mg/d)",      
+    "Iron":  "(mg/d)",           
+    "Magnesium":"(mg/d)",           
+    "Manganese": "(mg/d)",            
+    "Phosphorus": "(mg/d)",          
+    "Selenium": "(micro_g/d)",            
+    "Zinc":  "(mg/d)",            
+    "Potassium":"(mg/d)",         
+    "Sodium": "(mg/d)",
+    "Vitamin_A": "(micro_g/d)",
+    "Vitamin_C": "(mg/d)",
+    "Vitamin_D":"(micro_g/d)",
+    "Vitamin_E": "(mg/d)",       
+    "Vitamin_K":  "(micro_g/d)",
+    "Thiamine_VB1":  "(mg/d)",
+    "Riboflavin_VB2": "(mg/d)",
+    "Niacin_VB3": "(mg/d)",
+    "Pyridoxine_VB6":  "(mg/d)",
+    "Folate_VB9":"(micro_g/d)",
+    "Cobalamin_VB12":"(micro_g/d)",
+    "Pantothenic_Acid_VB5": "(mg/d)",
+    "Choline":  "(mg/d)"}
+
 data_macro_rda = {
     "female": {
         "Water": {
@@ -596,6 +624,7 @@ def creatplotdata(user_info,num_days):
         current_values = []
         y2 = []
         temp = []
+        
 
         y1.append(userdata_nutrition_data["minerals"].keys())
         y1.append(userdata_nutrition_data["vitamins"].keys())
@@ -611,6 +640,7 @@ def creatplotdata(user_info,num_days):
             y2.append(
                 f"Current Value : {current_value}, Max value : {dri_micro_nutrient_minerals(query_data1)}, {dri_micro_nutrient_minerals(query_data3)}"
             )
+            
 
         for key, value in userdata_nutrition_data["vitamins"].items():
             query_data2["nutrient"] = key
@@ -621,6 +651,8 @@ def creatplotdata(user_info,num_days):
             y2.append(
                 f"Current Value : {current_value},Max value : {dri_micro_nutrient_vitamins(query_data2)}, {dri_micro_nutrient_vitamins(query_data3)}"
             )
+            
+
         temp = [float(i) * num_days for item in temp for i in item]
         perc_s = [i / j for i, j in zip(current_values, temp)]
 
@@ -652,6 +684,8 @@ def creatplotdata(user_info,num_days):
             y2.append(
                 f"Current Value : {current_value},Max Value: {dri_macro_nutrient(query_data)} {dri_macro_nutrient(query_data3)}"
             )
+           
+
         temp = [float(item) * num_days for item in temp]
 
         perc_s = [i / j for i, j in zip(current_values, temp)]
@@ -748,18 +782,24 @@ def creatplotdata(user_info,num_days):
     deficient_nutrients = [i for i,j in zip(keys_micro, deficit_micro_gt_50) if j > 0 ]
     deficient_nutrients.extend( [i for i,j in zip(keys_macro, deficit_macro_gt_50) if j > 0 ])
 
+    Units_corrected = [data_units_corrected_for_display[i] for i in deficient_nutrients]
+
       
     targets = [i for i,j in zip(deficit_micro, deficit_micro_gt_50) if j > 0 ] 
     targets.extend([i for i,j in zip(deficit_macro, deficit_macro_gt_50) if j > 0 ] )
     target_nutrients_corrected = [ i*1000 if (j == 'Potassium') or (j =="Sodium")or (j =="Water") else i if (j!= "Copper") else i/1000  for i,j in zip(targets, deficient_nutrients) ]
 
-    print(f"deficient nutrients : {deficient_nutrients}")
-    print(f"Target values of nutrients : {targets}")
-    print(f"Corrected Target values of nutrients : {target_nutrients_corrected}")
+    # Remove Water, Carb and Fiber from the list
+    deficient_nutrients_new = [i for i in deficient_nutrients if(i!='Water' and i!="Fiber" and i!= "Carbohydrate") ]
+    target_nutrients_corrected_new = [i for i,j in zip(target_nutrients_corrected, deficient_nutrients) if ((j !='Water') and (j!="Fiber") and (j!= "Carbohydrate")) ]
+    Units_corrected_new = [i for i,j in zip(Units_corrected, deficient_nutrients) if ((j !='Water') and (j!="Fiber") and (j!= "Carbohydrate"))]
+
+    print(f"deficient nutrients : {deficient_nutrients_new}")    
+    print(f"Corrected Target values of nutrients : {target_nutrients_corrected_new}")
     displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + deficient_nutrients
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
 
-    return [graphJSON, deficient_nutrients,displaylist, target_nutrients_corrected]
+    return [graphJSON, deficient_nutrients_new, displaylist, target_nutrients_corrected_new, Units_corrected_new]
 
 
 if __name__ == "__main__":

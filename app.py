@@ -676,6 +676,7 @@ def analysis():
     global deficient_nutrients
     global displaylist
     global target_nutrients_corrected
+    global Units_corrected
 
     if checkLoggedIn() == False:
         return redirect("/login")
@@ -1043,6 +1044,7 @@ def analysis():
         deficient_nutrients = return_list[1]
         displaylist = return_list[2]
         target_nutrients_corrected= return_list[3]
+        Units_corrected = return_list[4]
 
         plot_ids = ["plot1", "plot2", "plot3"]
 
@@ -1244,15 +1246,21 @@ def job_status(job_id):
             basket_NDB.index = pd.RangeIndex(start=1,stop=(lastelement+1), step=1)
 
             basket_NDB = basket_NDB.drop(['NDB_No'], axis=1)
+            basket_NDB['Shrt_Desc'] = basket_NDB['Shrt_Desc'].str.title()
             basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
             basket_NDB_Transpose = basket_NDB.T
             basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Entry_')
 
             tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
+            
+            labels = [f"{i} {j}" for i,j in zip(deficient_nutrients, Units_corrected)]
+            df_Target = pd.DataFrame(columns = labels, data = [target_nutrients_corrected])
+            table_2 = [df_Target.to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
+            
 
             response = {
             'status': job.get_status(),
-            'result': tables,
+            'result': {'result1' : tables, 'target' :table_2}
             }
 
 
