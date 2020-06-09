@@ -797,7 +797,7 @@ def creatplotdata(user_info,num_days):
 
     print(f"deficient nutrients : {deficient_nutrients_new}")    
     print(f"Corrected Target values of nutrients : {target_nutrients_corrected_new}")
-    displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + deficient_nutrients
+    displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + deficient_nutrients_new
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
 
     return [graphJSON, deficient_nutrients_new, displaylist, target_nutrients_corrected_new, Units_corrected_new]

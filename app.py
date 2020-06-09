@@ -204,7 +204,11 @@ class Nutrition(db.Model):
     def __repr__(self):
         return "<Nutrition %r>" % (self.name)
 
-
+# Global variables for food recommentdation algorithm
+deficient_nutrients = list()
+displaylist = list()
+target_nutrients_corrected = list()
+Units_corrected = list()
 
 
 # Initialize the data base and create tables
@@ -667,10 +671,7 @@ def get_status(job):
 # Route #6(/analysis)
 # Design a query to display daily visualisations of the food intake by the user
 #############################################################################################
-global deficient_nutrients
-global displaylist
-global target_nutrients_corrected
-global Units_corrected
+
 
 @app.route("/analysis", methods=["GET", "POST"])
 def analysis():
