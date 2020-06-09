@@ -667,16 +667,13 @@ def get_status(job):
 # Route #6(/analysis)
 # Design a query to display daily visualisations of the food intake by the user
 #############################################################################################
-
+global deficient_nutrients
+global displaylist
+global target_nutrients_corrected
+global Units_corrected
 
 @app.route("/analysis", methods=["GET", "POST"])
 def analysis():
-
-
-    global deficient_nutrients
-    global displaylist
-    global target_nutrients_corrected
-    global Units_corrected
 
     if checkLoggedIn() == False:
         return redirect("/login")
@@ -685,10 +682,7 @@ def analysis():
     # plot_type = request.args.get("selectnutrients")
     plot_type = "All"
     desired_date = request.args.get("date")
-
     end_date = request.args.get("enddate")
-
- 
     
 
     if request.method == "GET" and desired_date :
