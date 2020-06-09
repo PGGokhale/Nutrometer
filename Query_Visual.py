@@ -10,6 +10,7 @@ data_units_corrected_for_display = {
     "Carbohydrate": "(g/d)",
     "Fiber":  "(g/d)",
     "Protein": "(mg/d)",
+    "Calcium": "(mg/d)",
     "Copper": "(mg/d)",      
     "Iron":  "(mg/d)",           
     "Magnesium":"(mg/d)",           
