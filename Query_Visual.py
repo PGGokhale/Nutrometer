@@ -777,30 +777,41 @@ def creatplotdata(user_info,num_days):
         {"data": trace3, "layout": layout3},
     ]
 
+    #identify the nutrients which are greater than 70 percent deficient
     deficit_macro_gt_50 = [item if item>= 70 else 0 for item in deficit_macro_perc]
     deficit_micro_gt_50= [item if item>= 70 else 0 for item in deficit_micro_perc]
 
+    #grab the deficient nutrient keys
     deficient_nutrients = [i for i,j in zip(keys_micro, deficit_micro_gt_50) if j > 0 ]
     deficient_nutrients.extend( [i for i,j in zip(keys_macro, deficit_macro_gt_50) if j > 0 ])
 
+    #grab the units of the deficient nutrients
     Units_corrected = [data_units_corrected_for_display[i] for i in deficient_nutrients]
 
-      
+    #grab the target values of the deficient nutrients and correct the target values to match the DRI units(there is a correction required for 4 items)      
     targets = [i for i,j in zip(deficit_micro, deficit_micro_gt_50) if j > 0 ] 
     targets.extend([i for i,j in zip(deficit_macro, deficit_macro_gt_50) if j > 0 ] )
     target_nutrients_corrected = [ i*1000 if (j == 'Potassium') or (j =="Sodium")or (j =="Water") else i if (j!= "Copper") else i/1000  for i,j in zip(targets, deficient_nutrients) ]
 
-    # Remove Water, Carb and Fiber from the list
+    #grab the percent target values of the deficient nutrients and correct the target values to match the DRI units(there is a correction required for 4 items)      
+    targets_perc = [i for i in  deficit_micro_gt_50 if i > 0 ] 
+    targets_perc.extend([i for i in deficit_macro_gt_50 if i > 0 ] )
+
+    # Remove Water, Carb and Fiber from the lists
     deficient_nutrients_new = [i for i in deficient_nutrients if(i!='Water' and i!="Fiber" and i!= "Carbohydrate") ]
     target_nutrients_corrected_new = [i for i,j in zip(target_nutrients_corrected, deficient_nutrients) if ((j !='Water') and (j!="Fiber") and (j!= "Carbohydrate")) ]
     Units_corrected_new = [i for i,j in zip(Units_corrected, deficient_nutrients) if ((j !='Water') and (j!="Fiber") and (j!= "Carbohydrate"))]
+    targets_perc = [i for i,j in zip(targets_perc, deficient_nutrients) if ((j !='Water') and (j!="Fiber") and (j!= "Carbohydrate")) ]
 
-    print(f"deficient nutrients : {deficient_nutrients_new}")    
-    print(f"Corrected Target values of nutrients : {target_nutrients_corrected_new}")
-    displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + deficient_nutrients_new
+    #Create a dataframe out of lists
+    df_deficient = pd.DataFrame( {'Nutrients':deficient_nutrients_new,'Target_Value':target_nutrients_corrected_new, 'Target_Perc':targets_perc, "Units": Units_corrected_new})
+    df_deficient = df_deficient.sort_values(by='Target_Perc', ascending=False)
+    df_deficient_select = df_deficient.head(5)
+
+    displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + df_deficient_select["Nutrients"].tolist()
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
 
-    return [graphJSON, deficient_nutrients_new, displaylist, target_nutrients_corrected_new, Units_corrected_new]
+    return [graphJSON, df_deficient_select["Nutrients"].tolist(), displaylist, df_deficient_select["Target_Value"].tolist(), df_deficient_select["Units"].tolist()]
 
 
 if __name__ == "__main__":
