@@ -61,6 +61,13 @@ from sklearn.preprocessing import StandardScaler
 from food_recommendation import (
 hillClimbing,
 )
+import redis
+from rq import Queue
+from worker import conn
+from rq.job import Job
+
+
+redis_queue = Queue(connection=conn)
 
 
 #################################################
@@ -78,7 +85,7 @@ app.secret_key = "1a2b3c4d5e"
 HOSTNAME = "127.0.0.1"
 PORT = 3306
 USERNAME = "root"
-PASSWORD = "uv9y9g5t"
+PASSWORD = "password"
 DIALECT = "mysql"
 DRIVER = "pymysql"
 DATABASE = "usda"
@@ -89,6 +96,7 @@ db_connection_string = (
 )
 
 # Database Setup for HEROKU
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     os.environ.get("JAWSDB_URL", "") or db_connection_string
@@ -196,6 +204,12 @@ class Nutrition(db.Model):
     def __repr__(self):
         return "<Nutrition %r>" % (self.name)
 
+# Global variables for food recommentdation algorithm
+deficient_nutrients = list()
+displaylist = list()
+target_nutrients_corrected = list()
+Units_corrected = list()
+
 
 # Initialize the data base and create tables
 @app.before_first_request
@@ -206,8 +220,7 @@ def setup():
 # Method to get the recommendation list of items similar to food items in advanced search
 # filepath = "/db/nutrition.csv"
 df = pd.read_csv("db/nutrition.csv")
-print("Nutrition data is: ")
-print(df.head())
+
 X_text = df["Shrt_Desc"].values
 cv = make_pipeline(
 CountVectorizer(
@@ -229,10 +242,9 @@ df["Total_fat/cal"] = df["Lipid_Total"]/ df["Energy"]
 df["Cholestrol/cal"] = df["Cholestrol"]/ df["Energy"]
 df["Sugar/cal"] = df["Sugar_Total"]/ df["Energy"]
 df["Calcium/cal"] = df["Calcium"]/ df["Energy"]    
-df_percalorie = df[["NDB_No", "Shrt_Desc", "Carbohydrate", "Protein", "Lipid_Total", "Fiber", "Sugar_Total", "Energy", "Protein/cal", "Carbohydrtes/cal", "Sodium/cal", "Sodium", 
+df_percalorie = df[["NDB_No", "Shrt_Desc", "Carbohydrate", "Protein", "Lipid_Total", "Fiber", "Sugar_Total", "Protein/cal", "Carbohydrtes/cal", "Sodium/cal", "Sodium", 
 "Total_fat/cal", "Cholestrol", "Sugar/cal", "Calcium/cal", "Calcium"]]
-print("dataFrame per calorie value is: ")
-print(df_percalorie.head())
+
 # Removing null values from DataFrame
 df_percalorie = df_percalorie.dropna(how='any',axis=0)
 # Find the array for X values in recommendation model
@@ -302,7 +314,7 @@ def login():
 # Function to get the variable names used to validate the logged in user.
 # This function retr=urns a user list with logged in user's first name, last name, gender and username
 def loginsys(username, password):
-    print("Username: " + username + " Password: " + password)
+    
     user_ls = (
         db.session.query(
             User_account.first_name,
@@ -412,6 +424,7 @@ def getUserpersonalData(user):
         User_account.date_of_birth.label("dob"),
     ).filter(User_account.username == user)
     user_info = cmd1.first()
+    print(user_info)
     return creatUserPersonalJson(user_info)
 
 
@@ -436,9 +449,6 @@ class AddMeal(FlaskForm):
     submit = SubmitField("Add")
 
 
-# Code to display daily statistics on dashboard
-# daily_goal_list = [1800, 130, 25, 2200, 25, 25.2]
-
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
@@ -453,13 +463,12 @@ def dashboard():
     session_user_name = session["username"]
     user_personal_data = getUserpersonalData(session_user_name)
     daily_goal_list = CalculateDailyGoals(user_personal_data)
-    print(daily_goal_list)
+   
 
     form = AddMeal(request.form)
     if form.validate_on_submit():
 
-        # flash(f'Meal Added for {form.meal_category.data}!', 'successfully')
-
+    
         new_meal = Meal_record(
             username=session["username"],
             meal_date=form.inputdate.data,
@@ -468,21 +477,11 @@ def dashboard():
             amount=form.servings_count.data,
             meal_item_code=form.foodNameId.data,
         )
-        # if new_meal.type is null:
-        #     print("Please enter a valid meal type value")
-        #     msg = "Please enter a valid value"
-        # elif new_meal.meal_desc is null:
-        #     print("Please search a meal item")
-        #     msg = "Please enter a valid value"
-        # elif new_meal.amount is null:
-        #     print("Please enter a valid serving size")
-        #     msg = "Please enter a valid serving sevalue"
 
-        # else:
         db.session.add(new_meal)
         db.session.commit()
         flash("Meal saved successfully!")
-        print("Adding meal")
+    
         return redirect("/dashboard")
 
     # Code to display daily statistics on dashboard - part 2
@@ -593,7 +592,7 @@ def dashboard():
         .filter(Meal_record.meal_item_code == Nutrition.NDB_No)
         .filter(Meal_record.meal_date == dt.date.today())
     )
-    # print ("daily_total qry: "+ str(cmd))
+    
     daily_stats = cmd.first()
 
     results = [0.0, 0, 0, 0, 0, 0]
@@ -607,25 +606,8 @@ def dashboard():
             float(daily_stats.water),
             float(daily_stats.fiber),
         ]
-    #      cmd = session_db.query(func.round(func.sum(Nutrition.Energy),0).label('cal'),\
-    #                                 func.round(func.sum(Nutrition.Carbohydrate),2).label('carbs'),\
-    #                                 func.round(func.sum(Nutrition.Lipid_Total),0).label('fats'),\
-    #                                 func.round(func.sum(Nutrition.Sodium), 2).label('sodium'),\
-    #                                 func.round(func.sum(Nutrition.Sugar_Total),2).label('sugar'),\
-    #                                 func.round(func.sum(Nutrition.Fiber),2).label('fiber'),\
-    #                                 func.count().label('cnt')).\
-    #                                 filter(Meal_record.username == session['username']).\
-    #                                 filter(Meal_record.meal_item_code == Nutrition.NDB_No).\
-    #                                 filter(Meal_record.meal_date == dt.date.today())
-    #     daily_stats = cmd.first()
 
-    #     results = [0,0,0,0,0,0]
 
-    #     if(daily_stats.cnt!=0):
-    #         results = [daily_stats.cal, daily_stats.carbs, daily_stats.fats, daily_stats.sodium, daily_stats.sugar, daily_stats.fiber]
-
-    print("daily stats are: ", daily_stats)
-    print("daily stats cnt: ", daily_stats.cnt)
 
     # Code to display last 5 entries on dashboard
     top5_entries = (
@@ -634,7 +616,7 @@ def dashboard():
         .order_by(Meal_record.id.desc())
         .limit(5)
     )
-    print("Top 5 entries are: ", top5_entries)
+
     return render_template(
         "dashboard.html",
         form=form,
@@ -668,6 +650,15 @@ def food_tracker():
 
     return render_template("food_history.html", top100_entries=top100_entries)
 
+# Heroku background task status
+def get_status(job):
+    status = {
+        'id': job.id,
+        'result': job.result,
+        'status': 'failed' if job.is_failed else 'pending' if job.result == None else 'completed'
+    }
+    status.update(job.meta)
+    return status
 
 # @app.route("/intake")
 # def intake():
@@ -684,11 +675,10 @@ def food_tracker():
 
 @app.route("/analysis", methods=["GET", "POST"])
 def analysis():
-
-
     global deficient_nutrients
     global displaylist
     global target_nutrients_corrected
+    global Units_corrected
 
     if checkLoggedIn() == False:
         return redirect("/login")
@@ -697,15 +687,11 @@ def analysis():
     # plot_type = request.args.get("selectnutrients")
     plot_type = "All"
     desired_date = request.args.get("date")
-
     end_date = request.args.get("enddate")
-
- 
     
 
     if request.method == "GET" and desired_date :
-        print(f"desired date : {desired_date}")
-        print(f"end date : {end_date}")
+
         starting_date = dateutil.parser.parse(desired_date)
         ending_date =  dateutil.parser.parse(end_date)
 
@@ -1057,6 +1043,7 @@ def analysis():
         deficient_nutrients = return_list[1]
         displaylist = return_list[2]
         target_nutrients_corrected= return_list[3]
+        Units_corrected = return_list[4]
 
         plot_ids = ["plot1", "plot2", "plot3"]
 
@@ -1065,32 +1052,22 @@ def analysis():
 
         )
     if request.method == "POST":
-
         if(len(deficient_nutrients)):
-
-            basket_NDB = hillClimbing(deficient_nutrients,displaylist, target_nutrients_corrected, 5)
-            print(basket_NDB)
-            lastelement = len(basket_NDB.index)
-            basket_NDB.index = pd.RangeIndex(start=1,stop=(lastelement+1), step=1)
-
-            basket_NDB = basket_NDB.drop(['NDB_No'], axis=1)
-            basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
-            basket_NDB_Transpose = basket_NDB.T
-            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Entry_')
-            tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
-            titles=basket_NDB_Transpose.columns.values
+            input_to_function = {"first":deficient_nutrients,
+            "second":displaylist,
+            "third":target_nutrients_corrected,
+            "fourth":5
+            }
+            job = redis_queue.enqueue(hillClimbing,input_to_function, job_timeout=600)
+            tables = None
+            job_id=job.get_id()
+    
+            return render_template("food_reco.html", tables=tables, job_id=json.dumps(job_id))
         else:
             tables = None
-            titles = None
-               
+            return render_template("food_reco.html", tables=tables, job_id=None)
     
-        return render_template("food_reco.html", tables=tables)
-
-            
-
-
     return render_template("Daily_vizualization.html")
-
 
 # Function to check if the user is logged in and maintain the infomration in session variable.
 # This is used in multiple routes.
@@ -1117,12 +1094,9 @@ def similar_items(term):
     similarities = cosine_similarity(X_norm[idx].reshape(1,-1), X_norm)
     k = 5
     result = np.sort(np.argpartition(similarities[0], len(similarities[0]) - k)[-k:])
-    print("list of similar items: ")
-    print("result for similar items:")
-    print(df_percalorie.iloc[result].columns)
-    print(df_percalorie.iloc[result].head())
+
     return df_percalorie.iloc[result].values.tolist()
-    # return
+
 
 @app.route("/nutrition", methods=["GET"])
 def nutrition():
@@ -1138,8 +1112,7 @@ def nutrition():
         )
 
         similarResult = similar_items(ndbNo)
-        print('SimilarResult')
-        print(similarResult)
+
         return render_template("nutrition.html", nutriData=nutriData,similarResult=similarResult)
     return render_template("nutrition.html")
 
@@ -1169,11 +1142,6 @@ def logout():
 # The list will display the food item name along with the item weight in grams and weight description.
 ######################################################################################################
 class DecimalEncoder(json.JSONEncoder):
-
-
-
-
-
 
 
 
@@ -1220,7 +1188,7 @@ def profile():
         .all()
     )
 
-    # print("User profile is: ", user_profile)
+
 
     return render_template("/profile.html", user_profile=user_profile)
 
@@ -1246,10 +1214,58 @@ def advanced_search():
     if not term:
         return '{  "data": [] } '
     ## Add logic here  to find the search term ##
-    print('term: '+term)
+
     searchResult = advanced_search_func(term)
     return json.dumps(searchResult.values.tolist(), cls=DecimalEncoder)
-    #return(json.dumps(str(searchResult.values.tolist())))
+
+
+######################################################################################################
+# Route #12(/job_status)
+# This route is to start the background task for Food recommendation based on the nutrition
+######################################################################################################
+
+@app.route("/job_status/<job_id>")
+def job_status(job_id):
+    
+    job = Job.fetch(job_id, connection=conn)
+    if job is None:
+        response = {'status': 'unknown'}
+    else:
+        response = {
+            'status': job.get_status(),
+            'result': job.result,
+        }
+
+        if job.is_failed:
+            response['message'] = job.exc_info.strip().split('\n')[-1]
+        if job.get_status() == "finished":
+    
+            basket_NDB = job.result
+            lastelement = len(basket_NDB.index)
+            basket_NDB.index = pd.RangeIndex(start=1,stop=(lastelement+1), step=1)
+
+            basket_NDB = basket_NDB.drop(['NDB_No'], axis=1)
+            basket_NDB['Shrt_Desc'] = basket_NDB['Shrt_Desc'].str.title()
+            basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
+            basket_NDB_Transpose = basket_NDB.T
+            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Entry_')
+
+            tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
+            
+            labels = [f"{i} {j}" for i,j in zip(deficient_nutrients, Units_corrected)]
+            df_Target = pd.DataFrame(columns = labels, data = [target_nutrients_corrected])
+            table_2 = [df_Target.to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
+            
+
+            response = {
+            'status': job.get_status(),
+            'result': {'result1' : tables, 'target' :table_2}
+            }
+
+
+    return jsonify(response)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
