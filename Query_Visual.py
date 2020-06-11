@@ -807,6 +807,7 @@ def creatplotdata(user_info,num_days):
     df_deficient = pd.DataFrame( {'Nutrients':deficient_nutrients_new,'Target_Value':target_nutrients_corrected_new, 'Target_Perc':targets_perc, "Units": Units_corrected_new})
     df_deficient = df_deficient.sort_values(by='Target_Perc', ascending=False)
     df_deficient_select = df_deficient.head(5)
+    print(df_deficient_select)
 
     displaylist = ["NDB_No", "Shrt_Desc", "Energy"] + df_deficient_select["Nutrients"].tolist()
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
