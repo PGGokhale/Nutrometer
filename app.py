@@ -1044,6 +1044,7 @@ def analysis():
         displaylist = return_list[2]
         target_nutrients_corrected= return_list[3]
         Units_corrected = return_list[4]
+        print(f"GET returned : {deficient_nutrients}")
 
         plot_ids = ["plot1", "plot2", "plot3"]
 
@@ -1052,6 +1053,7 @@ def analysis():
 
         )
     if request.method == "POST":
+        print(f"POST : {deficient_nutrients}")
         if(len(deficient_nutrients)):
             input_to_function = {"first":deficient_nutrients,
             "second":displaylist,
