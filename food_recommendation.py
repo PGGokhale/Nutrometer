@@ -33,6 +33,22 @@ for column in Required_columns:
 df_for_cluster = df_for_cluster.dropna(how='any',axis=0)
 
 
+def Findtheclusters_sort(element, n_clus, isHigh, threshold):
+    print(element)
+    
+    df_for_cluster_sorted = df_for_cluster.sort_values(by=element, ascending=False)
+    print(df_for_cluster_sorted.head())
+
+    
+    if (isHigh):
+        if threshold > 0.25:
+            return df_for_cluster_sorted.iloc[:50,[3]].values.flatten()
+        else:
+            return df_for_cluster_sorted.iloc[50:1000,[3]].values.flatten()
+    else:
+        return df_for_cluster_sorted.iloc[1000:,[3]].values.flatten()
+
+
 def Findtheclusters(element, n_clus, isHigh, threshold):
 
     print(element)
@@ -104,7 +120,16 @@ def calcScore(target, nutsSum):
         score.append(diff*diff)
     return score
 
-
+def Score_for_basket(basket, target):
+    list_score = list()
+    for i in range(len(basket.index)):
+        dummy_basket = basket.drop(index=i)
+        sum_of_nutrients = calcSum(dummy_basket)
+        total_score_rows = calcScore(target, sum_of_nutrients)
+        total_score_except_ith_basket = sum(total_score_rows)
+        list_score.append(total_score_except_ith_basket)
+    
+    return list_score
 
 # def hillClimbing(nutrients, displaylist, target, items_in_basket):
 def hillClimbing(inputs_to_function):
@@ -123,7 +148,7 @@ def hillClimbing(inputs_to_function):
     NoBasketEnteries = items_in_basket
     Norm_score_list_sum = [1 for i in range(len(nutrients))]
     iteration =0
-    max_no_iterations = 15
+    max_no_iterations = 50
     max_squared_error = calcScore(target, [0 for i in range(len(nutrients))])
     iteration_inner_loop = 0
     stuck_in_loop = False
@@ -156,17 +181,21 @@ def hillClimbing(inputs_to_function):
         for i in range(len(target)):
             diff.append((target[i]-sum_C[i])/target[i])
             abs_diff.append(abs((target[i]-sum_C[i])/target[i]))
+        print(f"Abs diff : {abs_diff}")
             
         #find the nutrient whose error is maximum. If the nutrient exceeds the required value then low nutrient cluster to be used for selection else moderate cluster    
         # if the loop is stuck then choose a nutrient with minimum error. Sometimes if a particular nutrient has large error then a particular food gets selected
-        # repeatedly and the loop gets stuck. Hence to avaoid loop getting stuck the strategy is changed. 
+        # repeatedly and the loop gets stuck. Hence to avoid loop getting stuck the strategy is changed. 
+        print(f"stuck in loop : {stuck_in_loop}")
         if stuck_in_loop:
             stuck_in_loop = False
             use_element = abs_diff.index(min(abs_diff))
         
         else:
-            max_nutrient_error = abs_diff.index(max(abs_diff))
+            # max_nutrient_error = abs_diff.index(max(abs_diff))
+            max_nutrient_error = diff.index(max(diff))
             use_element = max_nutrient_error
+        print(f"Use element : {use_element}")
         
         if (sign(diff[use_element]) == -1):
             High_cluster = False
@@ -175,8 +204,9 @@ def hillClimbing(inputs_to_function):
 
         print(abs_diff[use_element])       
         
-        selected_list_food = Findtheclusters([nutrients[use_element]], 3, High_cluster, abs_diff[use_element])
+        selected_list_food = Findtheclusters_sort([nutrients[use_element]], 3, High_cluster, abs_diff[use_element])
         print(selected_list_food)
+        print(type(selected_list_food))
         while True:
             index = random.choice(selected_list_food)
             
@@ -202,6 +232,7 @@ def hillClimbing(inputs_to_function):
             iteration = iteration-1
             break
         food1 = df_for_cluster.loc[df_for_cluster["NDB_No"] == index, nutrients]
+        print(food1)
         food1_NDB = df_for_cluster.loc[df_for_cluster["NDB_No"] == index, displaylist]
         prev_score = currentScore
         if (minScore > prev_score):
@@ -227,7 +258,7 @@ def hillClimbing(inputs_to_function):
             score_array = np.array(Score_list)
             score_array_sum = np.sum(score_array, axis=0)
 
-            # Add of the normalized sum squared error for each of the nurtient for each food item in the basket
+            # Add the normalized sum squared error for each of the nurtient for each food item in the basket
             # this way we can figure out which food item is contributing the most/least nutrients. It will help deciding which food item to knock off the basket
             for i in range(len(Score_list)):
                 score_list_sum.append(sum(Score_list[i]))
@@ -236,6 +267,9 @@ def hillClimbing(inputs_to_function):
            
             Score_total = calcScore(target, sum_C)
             currentScore = sum(Score_total)
+            print(f"Target Nutrition : {target}")
+            print(f"Sum of nutrition in basket : {sum_C}")
+            print(f"Current Score : {currentScore}")
             print("Basket before drop")
             print(basket)
             if ((currentScore > minScore) and (len(basket.index) > NoBasketEnteries)):
@@ -245,12 +279,26 @@ def hillClimbing(inputs_to_function):
                     #drop the top #no_to_drop entries which are having large errors. This will retain the basket size to NoBasketEnteries
                     no_to_drop = len(basket.index) - NoBasketEnteries
                     print(f"No.to drop : {no_to_drop}")
-                    top_list = sorted(range(len(score_list_sum)), key=lambda i: score_list_sum[i])[-no_to_drop:]
-                    print(top_list)
-                    basket.drop(index=top_list, inplace=True)
+                    # top_list = sorted(range(len(score_list_sum)), key=lambda i: score_list_sum[i])[-no_to_drop:]
+                    # print(top_list)
+                    # basket.drop(index=top_list, inplace=True)
+                    # basket.reset_index(inplace = True, drop=True)
+                    # basket_NDB.drop(index=top_list, inplace=True)
+                    # basket_NDB.reset_index(inplace = True, drop=True)
+
+
+                    # Calculate the sum quared error of the basket by dropping one food item at a time and create a list of it
+                    # The element when dropped produces the least sum squared error should be dropped to better the overall score
+                    list_of_sum_sq_err_by_one_food_drop = Score_for_basket(basket, target)
+                    print(f"new func : {list_of_sum_sq_err_by_one_food_drop}")                    
+                    index_to_drop = list_of_sum_sq_err_by_one_food_drop.index(min(list_of_sum_sq_err_by_one_food_drop))
+                    basket.drop(index=index_to_drop, inplace=True)
                     basket.reset_index(inplace = True, drop=True)
-                    basket_NDB.drop(index=top_list, inplace=True)
+                    basket_NDB.drop(index=index_to_drop, inplace=True)
                     basket_NDB.reset_index(inplace = True, drop=True)
+
+
+
                 else:
             
                     maxpos = score_list_sum.index(max(score_list_sum)) 

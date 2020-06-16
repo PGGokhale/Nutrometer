@@ -1,4 +1,4 @@
-{% extends "layout.html" %} {% block pagetitle %}Nutrometer{% endblock %} {% block bodycontent %}
+{% extends "layout_withoutNav.html" %} {% block pagetitle %}Nutrometer{% endblock %} {% block bodycontent %}
 <style>
 table {
 	width: 100%;
@@ -17,16 +17,18 @@ table {
           
  
                             </div>
+
+                      <h4>Sum of Nutrients of Food Recommended</h4>
+                            <div id = "divSumNutrients"  >
+          
+ 
+                            </div>
                       {% endif %}
+                      
                         <h4>Food Recommendation for you</h4>
 
 
                             {% if job_id %}
-                            <div id = "divTarget"  >
-          
- 
-                            </div>
-
                             <div id = "divResults"  >
           
  
@@ -78,6 +80,7 @@ table {
         console.log(data.result)
         $('#divResults').append(data.result.result1)
         $('#divTarget').append(data.result.target)
+        $('#divSumNutrients').append(data.result.Sum_of_nutrition)
           
           // flash_alert(data.result, "success");
           $("#submit").removeAttr("disabled");
