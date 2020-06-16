@@ -1044,6 +1044,7 @@ def analysis():
         displaylist = return_list[2]
         target_nutrients_corrected= return_list[3]
         Units_corrected = return_list[4]
+        print(f"GET returned : {deficient_nutrients}")
 
         plot_ids = ["plot1", "plot2", "plot3"]
 
@@ -1052,6 +1053,7 @@ def analysis():
 
         )
     if request.method == "POST":
+        print(f"POST : {deficient_nutrients}")
         if(len(deficient_nutrients)):
             input_to_function = {"first":deficient_nutrients,
             "second":displaylist,
@@ -1248,18 +1250,22 @@ def job_status(job_id):
             basket_NDB['Shrt_Desc'] = basket_NDB['Shrt_Desc'].str.title()
             basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
             basket_NDB_Transpose = basket_NDB.T
-            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Entry_')
+            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Food_')
 
             tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
             
             labels = [f"{i} {j}" for i,j in zip(deficient_nutrients, Units_corrected)]
+            sum_nutrients_basket = basket_NDB.sum().to_frame().transpose()
+            print(sum_nutrients_basket[deficient_nutrients])
+            table_3 = [sum_nutrients_basket[deficient_nutrients].to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
+            
             df_Target = pd.DataFrame(columns = labels, data = [target_nutrients_corrected])
             table_2 = [df_Target.to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
             
 
             response = {
             'status': job.get_status(),
-            'result': {'result1' : tables, 'target' :table_2}
+            'result': {'result1' : tables, 'target' :table_2, 'Sum_of_nutrition':table_3 }
             }
 
 
