@@ -287,11 +287,14 @@ def hillClimbing(inputs_to_function):
                     # basket_NDB.reset_index(inplace = True, drop=True)
 
 
-                    # Calculate the sum quared error of the basket by dropping one food item at a time and create a list of it
+                    # Calculate the sum squared error of the basket by dropping one food item at a time and create a list of it 
                     # The element when dropped produces the least sum squared error should be dropped to better the overall score
+                    # As calculated above the no_to_drop elements should be dropped
                     list_of_sum_sq_err_by_one_food_drop = Score_for_basket(basket, target)
-                    print(f"new func : {list_of_sum_sq_err_by_one_food_drop}")                    
-                    index_to_drop = list_of_sum_sq_err_by_one_food_drop.index(min(list_of_sum_sq_err_by_one_food_drop))
+                    print(f"new func : {list_of_sum_sq_err_by_one_food_drop}")
+                    sorted_sum_sq_error_list = pd.Series(list_of_sum_sq_err_by_one_food_drop).sort_values(ascending=True)
+                    index_to_drop= sorted_sum_sq_error_list.index.tolist()[:no_to_drop]                    
+                    # index_to_drop = list_of_sum_sq_err_by_one_food_drop.index(min(list_of_sum_sq_err_by_one_food_drop))
                     basket.drop(index=index_to_drop, inplace=True)
                     basket.reset_index(inplace = True, drop=True)
                     basket_NDB.drop(index=index_to_drop, inplace=True)
