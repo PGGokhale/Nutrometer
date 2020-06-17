@@ -13,23 +13,24 @@ table {
                     <div class="section-title">
                       {% if job_id %}
                       <h4>Target Nutrients for which Food is Recommended</h4>
-                            <div id = "divTarget"  >
+                            <div id = "divTarget"  style="overflow:scroll" >
           
  
                             </div>
 
                       <h4>Sum of Nutrients of Food Recommended</h4>
-                            <div id = "divSumNutrients"  >
+                            <div id = "divSumNutrients" style="overflow:scroll" >
           
  
                             </div>
                       {% endif %}
                       
-                        <h4>Food Recommendation for you</h4>
+                        <h4>Food Recommendation for you </h4>
 
 
                             {% if job_id %}
-                            <div id = "divResults"  >
+                            <h4 id="heading_result">  </h4>
+                            <div id = "divResults"  style="overflow:scroll" >
           
  
                             </div>
@@ -81,6 +82,7 @@ table {
         $('#divResults').append(data.result.result1)
         $('#divTarget').append(data.result.target)
         $('#divSumNutrients').append(data.result.Sum_of_nutrition)
+        $('#heading_result').append(`Result for Start date : ${data.result.start_date} and End date : ${data.result.end_date}`)
           
           // flash_alert(data.result, "success");
           $("#submit").removeAttr("disabled");

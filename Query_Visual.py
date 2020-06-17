@@ -777,9 +777,9 @@ def creatplotdata(user_info,num_days):
         {"data": trace3, "layout": layout3},
     ]
 
-    #identify the nutrients which are greater than 70 percent deficient
-    deficit_macro_gt_50 = [item if item>= 70 else 0 for item in deficit_macro_perc]
-    deficit_micro_gt_50= [item if item>= 70 else 0 for item in deficit_micro_perc]
+    #identify the nutrients which are greater than 1 percent deficient
+    deficit_macro_gt_50 = [item if item>= 1 else 0 for item in deficit_macro_perc]
+    deficit_micro_gt_50= [item if item>= 1 else 0 for item in deficit_micro_perc]
 
     #grab the deficient nutrient keys
     deficient_nutrients = [i for i,j in zip(keys_micro, deficit_micro_gt_50) if j > 0 ]
