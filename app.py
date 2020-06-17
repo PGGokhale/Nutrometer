@@ -1252,15 +1252,15 @@ def job_status(job_id):
             basket_NDB_Transpose = basket_NDB.T
             basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Food_')
 
-            tables=[basket_NDB_Transpose.to_html(classes='table table-dark', table_id ='diary-table', justify='center')]
+            tables=[basket_NDB_Transpose.to_html(classes='table table-striped table-dark', table_id ='divResults', justify='center')]
             
             labels = [f"{i} {j}" for i,j in zip(deficient_nutrients, Units_corrected)]
             sum_nutrients_basket = basket_NDB.sum().to_frame().transpose()
             print(sum_nutrients_basket[deficient_nutrients])
-            table_3 = [sum_nutrients_basket[deficient_nutrients].to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
+            table_3 = [sum_nutrients_basket[deficient_nutrients].to_html(classes='table table-striped table-dark', table_id ='divSumNutrients', justify='center', index=False)]
             
             df_Target = pd.DataFrame(columns = labels, data = [target_nutrients_corrected])
-            table_2 = [df_Target.to_html(classes='table table-dark', table_id ='diary-table', justify='center', index=False)]
+            table_2 = [df_Target.to_html(classes='table table-striped table-dark', table_id ='divTarget', justify='center', index=False)]
             
 
             response = {

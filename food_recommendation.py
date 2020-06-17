@@ -35,8 +35,10 @@ df_for_cluster = df_for_cluster.dropna(how='any',axis=0)
 
 def Findtheclusters_sort(element, n_clus, isHigh, threshold):
     print(element)
+    # Use the element/cal columns for sorting
+    element_per_cal = [f"{item}/cal" for item in element]
     
-    df_for_cluster_sorted = df_for_cluster.sort_values(by=element, ascending=False)
+    df_for_cluster_sorted = df_for_cluster.sort_values(by=element_per_cal, ascending=False)
     print(df_for_cluster_sorted.head())
 
     
