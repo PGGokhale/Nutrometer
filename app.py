@@ -1255,7 +1255,7 @@ def job_status(job_id):
             basket_NDB['Shrt_Desc'] = basket_NDB['Shrt_Desc'].str.title()
             basket_NDB = basket_NDB.rename(columns={'Shrt_Desc': 'Food'})
             basket_NDB_Transpose = basket_NDB.T
-            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Food_')
+            basket_NDB_Transpose = basket_NDB_Transpose.add_prefix('Food ')
 
             tables=[basket_NDB_Transpose.to_html(classes='table table-striped table-dark', table_id ='divResults', justify='center')]
             
