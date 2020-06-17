@@ -679,6 +679,8 @@ def analysis():
     global displaylist
     global target_nutrients_corrected
     global Units_corrected
+    global desired_date
+    global end_date
 
     if checkLoggedIn() == False:
         return redirect("/login")
@@ -1228,6 +1230,9 @@ def advanced_search():
 
 @app.route("/job_status/<job_id>")
 def job_status(job_id):
+
+    global desired_date
+    global end_date
     
     job = Job.fetch(job_id, connection=conn)
     if job is None:
@@ -1265,7 +1270,7 @@ def job_status(job_id):
 
             response = {
             'status': job.get_status(),
-            'result': {'result1' : tables, 'target' :table_2, 'Sum_of_nutrition':table_3 }
+            'result': {'result1' : tables, 'target' :table_2, 'Sum_of_nutrition':table_3, "start_date": desired_date, "end_date":end_date }
             }
 
 
